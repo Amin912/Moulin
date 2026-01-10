@@ -4,38 +4,38 @@
 
 typedef struct{
 char *turn;
-int activated; //egale à 1 si la case est activée sinon 0
+int activated; //egale Ã  1 si la case est activÃ©e sinon 0
 }caseinfo;
 
 
-int stat[3][8];         // Définition de l'etat des points.
+int stat[3][8];         // DÃ©finition de l'etat des points.
 int role;               // Determine le role du joueur qui va jouer.
 int moulin[3][8];       // Determine si un pion forme un moulin ou non.
 int next;               // Empeche le joueur suivant de jouer en cas d'une erreur
 int i,j;                // Pour les boucles
 int counter=0;          // Passe le role au joueur suivant        //
-int dest;               // Le mouvement desiré par le joueur
-int pleft1=9;           // Les pion qui restent à deposer pour joueur 1
-int pleft2=9;           // Les pion qui restent à deposer pour joueur 2
+int dest;               // Le mouvement desirÃ© par le joueur
+int pleft1=9;           // Les pion qui restent Ã  deposer pour joueur 1
+int pleft2=9;           // Les pion qui restent Ã  deposer pour joueur 2
 int err=0;              // Detecte les erreurs
 int redeaten=0;         // Le nombre des pions supprimer par le joueur 1
 int greeneaten=0;       // Le nombre des pions supprimer par le joueur 2
-int down[3][8];         // La possibilité de deplacer le pion vers le carré précédent
-int up[3][8];           // La possibilité de deplacer le pion vers le carré suivant
-int clock[3][8];        // La possibilité de deplacer le pion dans le sens horraire
-int counterclock[3][8]; // La possibilité de deplacer le pion dans le sens trigonometrique
-int onBoard1=0;         // Le nombre des pions posés sur le tablier pour joueur 1
-int onBoard2=0;         // Le nombre des pions posés sur le tablier pour joueur 1
-int paralized1=0;       // Le nombre des pions paralysés pour joueur 1
-int paralized2=0;       // Le nombre des pions paralysés pour joueur 2
+int down[3][8];         // La possibilitÃ© de deplacer le pion vers le carrÃ© prÃ©cÃ©dent
+int up[3][8];           // La possibilitÃ© de deplacer le pion vers le carrÃ© suivant
+int clock[3][8];        // La possibilitÃ© de deplacer le pion dans le sens horraire
+int counterclock[3][8]; // La possibilitÃ© de deplacer le pion dans le sens trigonometrique
+int onBoard1=0;         // Le nombre des pions posÃ©s sur le tablier pour joueur 1
+int onBoard2=0;         // Le nombre des pions posÃ©s sur le tablier pour joueur 1
+int paralized1=0;       // Le nombre des pions paralysÃ©s pour joueur 1
+int paralized2=0;       // Le nombre des pions paralysÃ©s pour joueur 2
 int targetsqr;          // Coordonnes du points de la
-int targetpos;          // destination après un mouvement*/
+int targetpos;          // destination aprÃ¨s un mouvement*/
 char jumpsqr;
 char jumppos;
 
 
 
-void possibleMvt()// Determiner les mouvement possibles pour chaque pion posé
+void possibleMvt()// Determiner les mouvement possibles pour chaque pion posÃ©
 {
     for(i=0;i<3;i++){
         for(j=0;j<8;j++){
@@ -62,14 +62,14 @@ void possibleMvt()// Determiner les mouvement possibles pour chaque pion posé
     }
 }
 
-void retry(){// la fonction de repettion qui initialise tout les cases à 0
+void retry(){// la fonction de repettion qui initialise tout les cases Ã  0
 for(i=0;i<3;i++){
     for(j=0;j<8;j++){
          stat[i][j]=0;
     }
 }
 }
-void cl(){ //la fonction qui met à jour l'ecran
+void cl(){ //la fonction qui met Ã  jour l'ecran
 HANDLE                     hStdOut;
   CONSOLE_SCREEN_BUFFER_INFO csbi;
   DWORD                      count;
@@ -523,12 +523,12 @@ run:
         else
             printf("\n\t\t\t\t\t\t         Placing phase:\n");
         }
-        if (role==1 && choice2==1 && (choice4==1 || (moving && choice4==2))){ //cas de vs machine facile relativement à la première phase
+        if (role==1 && choice2==1 && (choice4==1 || (moving && choice4==2))){ //cas de vs machine facile relativement Ã  la premiÃ¨re phase
             input1=rand()%3+1;
             input2=rand()%8+1;
         }
 
-        else if (role==1 && choice2==1 && choice4==2 && !moving){ //cas de vs machine moyen relativement à la première phase
+        else if (role==1 && choice2==1 && choice4==2 && !moving){ //cas de vs machine moyen relativement Ã  la premiÃ¨re phase
         random=0;
         for (j=0;j<8;j++){for (i=0;i<3;i++){
 
@@ -638,7 +638,7 @@ run:
 
     }
     else if((stat[input1-1][input2-1]==1 && role-1) || (stat[input1-1][input2-1]==2 && role==1)){
-        evaluate();//evaluation de notre table pour detecter les cases paralysées
+        evaluate();//evaluation de notre table pour detecter les cases paralysÃ©es
 
         printf("\nMoves  ");
         if (role==1 && choice2==1)
