@@ -4,38 +4,38 @@
 
 typedef struct{
 char *turn;
-int activated; //egale à 1 si la case est activée sinon 0
+int activated; // 1 if a piece sits on this point, 0 otherwise
 }caseinfo;
 
 
-int stat[3][8];         // Définition de l'etat des points.
-int role;               // Determine le role du joueur qui va jouer.
-int moulin[3][8];       // Determine si un pion forme un moulin ou non.
-int next;               // Empeche le joueur suivant de jouer en cas d'une erreur
-int i,j;                // Pour les boucles
-int counter=0;          // Passe le role au joueur suivant        //
-int dest;               // Le mouvement desiré par le joueur
-int pleft1=9;           // Les pion qui restent à deposer pour joueur 1
-int pleft2=9;           // Les pion qui restent à deposer pour joueur 2
-int err=0;              // Detecte les erreurs
-int redeaten=0;         // Le nombre des pions supprimer par le joueur 1
-int greeneaten=0;       // Le nombre des pions supprimer par le joueur 2
-int down[3][8];         // La possibilité de deplacer le pion vers le carré précédent
-int up[3][8];           // La possibilité de deplacer le pion vers le carré suivant
-int clock[3][8];        // La possibilité de deplacer le pion dans le sens horraire
-int counterclock[3][8]; // La possibilité de deplacer le pion dans le sens trigonometrique
-int onBoard1=0;         // Le nombre des pions posés sur le tablier pour joueur 1
-int onBoard2=0;         // Le nombre des pions posés sur le tablier pour joueur 1
-int paralized1=0;       // Le nombre des pions paralysés pour joueur 1
-int paralized2=0;       // Le nombre des pions paralysés pour joueur 2
-int targetsqr;          // Coordonnes du points de la
-int targetpos;          // destination après un mouvement*/
+int stat[3][8];         // What occupies each point: 0 empty, 1 or 2 a player's piece
+int role;               // Whose turn it is
+int moulin[3][8];       // Whether the piece on each point is part of a mill
+int next;               // Stops the turn passing to the other player after an invalid move
+int i,j;                // Loop counters
+int counter=0;          // Number of turns played
+int dest;               // The direction the player wants to move in
+int pleft1=9;           // Pieces player 1 still has to place
+int pleft2=9;           // Pieces player 2 still has to place
+int err=0;              // Set when a move is invalid
+int redeaten=0;         // Pieces removed by player 1
+int greeneaten=0;       // Pieces removed by player 2
+int down[3][8];         // Whether each piece can move to the previous (inner) square
+int up[3][8];           // Whether each piece can move to the next (outer) square
+int clock[3][8];        // Whether each piece can move clockwise
+int counterclock[3][8]; // Whether each piece can move counter-clockwise
+int onBoard1=0;         // Player 1's pieces on the board
+int onBoard2=0;         // Player 2's pieces on the board
+int paralized1=0;       // Player 1's pieces that cannot move
+int paralized2=0;       // Player 2's pieces that cannot move
+int targetsqr;          // Square and position of the point
+int targetpos;          // a piece moved to
 char jumpsqr;
 char jumppos;
 
 
 
-void possibleMvt()// Determiner les mouvement possibles pour chaque pion posé
+void possibleMvt()// Work out which directions each piece on the board can move in
 {
     for(i=0;i<3;i++){
         for(j=0;j<8;j++){
@@ -62,14 +62,14 @@ void possibleMvt()// Determiner les mouvement possibles pour chaque pion posé
     }
 }
 
-void retry(){// la fonction de repettion qui initialise tout les cases à 0
+void retry(){// Empties the board for a new game
 for(i=0;i<3;i++){
     for(j=0;j<8;j++){
          stat[i][j]=0;
     }
 }
 }
-void cl(){ //la fonction qui met à jour l'ecran
+void cl(){ // Clears the screen
 HANDLE                     hStdOut;
   CONSOLE_SCREEN_BUFFER_INFO csbi;
   DWORD                      count;
@@ -105,7 +105,7 @@ HANDLE                     hStdOut;
   SetConsoleCursorPosition( hStdOut, homeCoords );
   }
 
-int molin(int a, int b ){ //detecter l'existance d'un moulin*
+int molin(int a, int b ){ // Returns 1 if the piece at (a, b) is part of a mill
     for(i=0;i<3;i++){
             for(j=0;j<8;j++){
             moulin[i][j]=0;
@@ -144,8 +144,6 @@ int molin(int a, int b ){ //detecter l'existance d'un moulin*
             moulin[0][7]=1; moulin[1][7]=1 ; moulin[2][7]=1;
 }
 
-            //mou+=1;
-            // else???
 for (i =0 ; i<3 ; i++){
 
         if (stat[i][0]==stat[i][1] && stat[i][1]==stat[i][2] && stat[i][1]==2){
@@ -181,7 +179,7 @@ for (i =0 ; i<3 ; i++){
     return moulin[a][b];
 }
 
-caseinfo state(int pos1,int pos2){// changer l'etat des cases suivant l'etat de la matrice stat
+caseinfo state(int pos1,int pos2){// What to draw at a point, based on the stat matrix
     caseinfo util;
 
 
@@ -203,7 +201,7 @@ caseinfo state(int pos1,int pos2){// changer l'etat des cases suivant l'etat de 
 
 
 
-void color(int couleurDuTexte,int couleurDeFond) // fonction d'affichage de couleurs
+void color(int couleurDuTexte,int couleurDeFond) // Sets the text and background colour
 {
         HANDLE H=GetStdHandle(STD_OUTPUT_HANDLE);
         SetConsoleTextAttribute(H,couleurDeFond*16+couleurDuTexte);
@@ -298,7 +296,7 @@ void mov(int dest , int s , int p){
 int sqr=s-1;
 int pos=p-1;
 
-if (dest==3) // UP mouvement
+if (dest==3) // Move to the next (outer) square
     {
     if (stat[sqr+1][pos]!=1 && stat[sqr+1][pos]!=2 && p%2==0 && sqr<2){
 
@@ -310,7 +308,7 @@ else{
     up[sqr][pos]=0;
 }
     }
-else if (dest==4) // DOWN  mouvement
+else if (dest==4) // Move to the previous (inner) square
     {
     if (stat[sqr-1][pos]!=1 && stat[sqr-1][pos]!=2 && p%2==0 && sqr>0){
         targetsqr=sqr-1;
@@ -323,7 +321,7 @@ else if (dest==4) // DOWN  mouvement
     }
 }
 
-else if (dest==2) //COUNTERCLOCK MOVEMENT
+else if (dest==2) // Move counter-clockwise
 {
     if ((stat[sqr][pos-1]!=1 && stat[sqr][pos-1]!=2)|| (pos==0 && stat[sqr][7]!=1 && stat[sqr][7]!=2)){
     targetsqr=sqr;
@@ -338,7 +336,7 @@ else if (dest==2) //COUNTERCLOCK MOVEMENT
 }
 }
 
-else if (dest==1) //CLOCK MOVEMENT
+else if (dest==1) // Move clockwise
 {
     if((stat[sqr][pos+1]!=1 && stat[sqr][pos+1]!=2)|| (pos==7 && stat[sqr][0]!=1 && stat[sqr][0]!=2)){
     clock[sqr][pos]=1;
@@ -523,12 +521,12 @@ run:
         else
             printf("\n\t\t\t\t\t\t         Placing phase:\n");
         }
-        if (role==1 && choice2==1 && (choice4==1 || (moving && choice4==2))){ //cas de vs machine facile relativement à la première phase
+        if (role==1 && choice2==1 && (choice4==1 || (moving && choice4==2))){ // Easy computer opponent, and medium in the moving phase: random moves
             input1=rand()%3+1;
             input2=rand()%8+1;
         }
 
-        else if (role==1 && choice2==1 && choice4==2 && !moving){ //cas de vs machine moyen relativement à la première phase
+        else if (role==1 && choice2==1 && choice4==2 && !moving){ // Medium computer opponent while placing: complete or block a mill
         random=0;
         for (j=0;j<8;j++){for (i=0;i<3;i++){
 
@@ -638,7 +636,7 @@ run:
 
     }
     else if((stat[input1-1][input2-1]==1 && role-1) || (stat[input1-1][input2-1]==2 && role==1)){
-        evaluate();//evaluation de notre table pour detecter les cases paralysées
+        evaluate();// Count pieces that cannot move
 
         printf("\nMoves  ");
         if (role==1 && choice2==1)
@@ -748,13 +746,13 @@ eat:
     if(next)
         role=(role+1)%2;
 
-    // definission du vainqueur:
+    // Decide the winner:
     if((onBoard1<=2 || onBoard1-paralized1==0) && moving==1)
         win=2;
     else if ((onBoard2<=2 || onBoard2-paralized2==0) && moving==1)
         win=1;
 
-    if(win==1) //condition pour que le joueur 1 gagne
+    if(win==1) // Player 1 wins
         {
         cl();
         color(0,2);printf("\n\n\n _____ _   _  _____   _    _ _____ _   _  _   _  ___________   _____ _____ \n");
