@@ -1,9 +1,10 @@
- #include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <windows.h>
 
 typedef struct{
-char *turn;
+char turn[3];   // What to draw: "@@", "++" or the point's number
 int activated; // 1 if a piece sits on this point, 0 otherwise
 }caseinfo;
 
@@ -49,12 +50,12 @@ void possibleMvt()// Work out which directions each piece on the board can move 
             else
                 counterclock[i][j]=0;
 
-            if (stat[i+1][j]!=1 && stat[i+1][j]!=2 && j%2==1 && i<2)
+            if (i<2 && j%2==1 && stat[i+1][j]!=1 && stat[i+1][j]!=2)
                 up[i][j]=1;
             else
                 up[i][j]=0;
 
-            if (stat[i-1][j]!=1 && stat[i-1][j]!=2 && j%2==1 && i>0)
+            if (i>0 && j%2==1 && stat[i-1][j]!=1 && stat[i-1][j]!=2)
                 down[i][j]=1;
             else
                 down[i][j]=0;
@@ -184,16 +185,16 @@ caseinfo state(int pos1,int pos2){// What to draw at a point, based on the stat 
 
 
     if(stat[pos1-1][pos2-1]==1){
-        util.turn="@@";
+        strcpy(util.turn, "@@");
         util.activated=1;}
     else if (stat[pos1-1][pos2-1]==2){
-        util.turn="++";
+        strcpy(util.turn, "++");
         util.activated=1;}
 
 
     else {
         util.activated=0;
-        sprintf(util.turn, "%d", pos1*10+pos2);
+        snprintf(util.turn, sizeof util.turn, "%d", pos1*10+pos2);
     }
 
     return util;
@@ -298,7 +299,7 @@ int pos=p-1;
 
 if (dest==3) // Move to the next (outer) square
     {
-    if (stat[sqr+1][pos]!=1 && stat[sqr+1][pos]!=2 && p%2==0 && sqr<2){
+    if (sqr<2 && p%2==0 && stat[sqr+1][pos]!=1 && stat[sqr+1][pos]!=2){
 
     targetsqr=sqr+1;
     targetpos=pos;
@@ -310,7 +311,7 @@ else{
     }
 else if (dest==4) // Move to the previous (inner) square
     {
-    if (stat[sqr-1][pos]!=1 && stat[sqr-1][pos]!=2 && p%2==0 && sqr>0){
+    if (sqr>0 && p%2==0 && stat[sqr-1][pos]!=1 && stat[sqr-1][pos]!=2){
         targetsqr=sqr-1;
         targetpos=pos;
 
@@ -323,7 +324,7 @@ else if (dest==4) // Move to the previous (inner) square
 
 else if (dest==2) // Move counter-clockwise
 {
-    if ((stat[sqr][pos-1]!=1 && stat[sqr][pos-1]!=2)|| (pos==0 && stat[sqr][7]!=1 && stat[sqr][7]!=2)){
+    if ((pos>0 && stat[sqr][pos-1]!=1 && stat[sqr][pos-1]!=2)|| (pos==0 && stat[sqr][7]!=1 && stat[sqr][7]!=2)){
     targetsqr=sqr;
     if (pos!=0)
         targetpos=pos-1;
@@ -338,7 +339,7 @@ else if (dest==2) // Move counter-clockwise
 
 else if (dest==1) // Move clockwise
 {
-    if((stat[sqr][pos+1]!=1 && stat[sqr][pos+1]!=2)|| (pos==7 && stat[sqr][0]!=1 && stat[sqr][0]!=2)){
+    if((pos<7 && stat[sqr][pos+1]!=1 && stat[sqr][pos+1]!=2)|| (pos==7 && stat[sqr][0]!=1 && stat[sqr][0]!=2)){
     clock[sqr][pos]=1;
     targetsqr=sqr;
     if(pos!=7)
@@ -351,6 +352,9 @@ else if (dest==1) // Move clockwise
         err=1;
         clock[sqr][pos]=0;
 }
+}
+else{
+    err=1; // Not one of the four directions
 }
 if (!err){
     if(!role)
@@ -391,13 +395,19 @@ void evaluate(){
 }
 
 
+void waitForEnter(){ // Waits until the player presses Enter
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {} // Rest of the previous input line
+    printf("\nPress Enter to continue...");
+    while ((c = getchar()) != '\n' && c != EOF) {}
+}
+
 int main()
 {
     again:
     srand(time(0));
     int choice;
     int choice2;
-    char *choice3;
     int choice4;
     int k=0;
     int input1,input2,input3,input4;
@@ -666,7 +676,7 @@ eat:
 
 
         if((molin(input1-1,input2-1)==1 && err==0 && !moving) || (moving && molin(targetsqr,targetpos)==1 && err==0)){
-            if (choice2==1 && role==1){
+            if (choice2==1 && role==1 && choice4==1){
             input3=rand()%3+1;
             input4=rand()%8+1;
             }
@@ -693,7 +703,7 @@ eat:
                 }
 
                 else if (j%2==1 && stat[(i+2)%3][j]==1 && stat[(i+1)%3][j]==1 && stat[i][j]==0){
-                    input3=(i+1)%3;
+                    input3=(i+1)%3+1;
                     input4=j+1;
                     break;
                 }
@@ -703,8 +713,8 @@ eat:
             }
         }
         if (random>=24){
-            input3=rand()%3;
-            input4=rand()%8;
+            input3=rand()%3+1;
+            input4=rand()%8+1;
 
         }
     }
@@ -768,7 +778,6 @@ eat:
         printf("                 | |   | |____| | | || | | |___| |\\ \\  _| |_               \n");
         printf("                 \\_|   \\_____/\\_| |_/\\_/ \\____/\\_| \\_| \\___/               \n");color(15,0);
         system("pause");
-        //scanf("%s",choice3);
         pleft1=9;
         pleft2=9;
         goto go;
@@ -787,7 +796,7 @@ eat:
         printf("                 |  __/| |    |  _  |\\ / |  __||    /    / /               \n");
         printf("                 | |   | |____| | | || | | |___| |\\ \\  ./ /___             \n");
         printf("                 \\_|   \\_____/\\_| |_/\\_/ \\____/\\_| \\_| \\_____/             \n");color(15,0);
-        scanf("%s",&choice3);
+        waitForEnter();
         goto go;
             }
 if (!(choice2==1 && role==1))
@@ -802,7 +811,7 @@ if (!(choice2==1 && role==1))
         if (choice4==1)
             goto again;
         else{
-            cl;
+            cl();
             drawgrid();
             printf("Incorrect values");
             goto run;
