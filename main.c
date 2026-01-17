@@ -395,6 +395,17 @@ void evaluate(){
 }
 
 
+int readInt(){ // Reads a number; returns -1 if the player typed something else
+    int value;
+    if (scanf("%d", &value) == 1)
+        return value;
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {} // Throw away the rest of the line
+    if (c == EOF)
+        exit(0); // Input was closed, so there is nothing left to read
+    return -1;
+}
+
 void waitForEnter(){ // Waits until the player presses Enter
     int c;
     while ((c = getchar()) != '\n' && c != EOF) {} // Rest of the previous input line
@@ -429,7 +440,7 @@ int main()
     color(3,0);printf("                                      \t\t\t\t     __________\n                                      \t\t\t\t    /          \\\n                                      \t\t\t\t   || 2-->Help ||\n                                      \t\t\t\t    \\__________/\n\n\n\n\n\n");color(15,0);
     color(3,0);printf("                                      \t\t\t\t     __________\n                                      \t\t\t\t    /          \\\n                                      \t\t\t\t   || 3-->Exit ||\n                                      \t\t\t\t    \\__________/\n\n\n\n\n\n");color(15,0);
     color(3,0);printf("\n                                      \t\t\t\t     Your choice:");color(15,0);
-    scanf("%d",&choice);
+    choice=readInt();
     cl();
 
     switch(choice){
@@ -460,7 +471,7 @@ int main()
     printf("\t\t\t\t\t|to try to form mills and remove their opponent's pieces as in phase one. |\n");
     printf("\t\t\t\t\t|_________________________________________________________________________|\n\n\n");
     printf("\n\n\n\t\t\t\t\tPress 0 to return to the menu:");
-    scanf("%d",&choice);
+    choice=readInt();
     goto go;
 
     break;
@@ -473,7 +484,7 @@ int main()
     printf("\t\t\t\t\t");color(15,5);printf("1--> vs machine");color(15,0);
     printf("\t\t\t\t\t");color(15,5);printf("2--> vs player\n\n\n\n\n\n\n\n\n\n\n");color(15,0);
     printf("                                      \t\t\t\t     ");color(3,0);printf("Your choice:");color(15,0);
-    scanf("%d",&choice2);
+    choice2=readInt();
     if (choice2==1){
         cl();
         for (int i = 0 ; i<10 ; i++){
@@ -482,7 +493,9 @@ int main()
         printf("\t\t\t\t\t");color(15,2);printf("1--> Easy");color(15,0);
         printf("\t\t\t\t\t\t\t");color(15,1);printf("2--> Medium");color(15,0);printf("\n\n\n\n\n\n\n\n\n\n\n");
         printf("                                      \t\t\t\t     Your choice:");
-        scanf("%d",&choice4);
+        choice4=readInt();
+        if (choice4!=2)
+            choice4=1; // Anything else means easy
     }
 
 
@@ -605,9 +618,11 @@ run:
 
         else if (err==0){
         printf("Enter square number (1,3)");
-        scanf("%d",&input1);
+        input1=readInt();
         printf("Enter position (1,8)");
-        scanf("%d",&input2);
+        input2=readInt();
+        if (input1<1 || input1>3 || input2<1 || input2>8)
+            break; // Not a point on the board: ask whether to quit
         }
         possibleMvt();
         evaluate();
@@ -652,7 +667,7 @@ run:
         if (role==1 && choice2==1)
             dest=rand()%4+1;
         else
-            scanf ("%d",&dest);
+            dest=readInt();
         mov(dest , input1 , input2);
         possibleMvt();
         evaluate();
@@ -720,9 +735,9 @@ eat:
     }
 
             else
-                scanf("%d%d",&input3,&input4);
+                { input3=readInt(); input4=readInt(); }
 
-            if (stat[input3-1][input4-1]!=stat[input1-1][input2-1] && stat[input3-1][input4-1]!=0 && molin(input3-1,input4-1)!=1){
+            if (input3>=1 && input3<=3 && input4>=1 && input4<=8 && stat[input3-1][input4-1]!=stat[input1-1][input2-1] && stat[input3-1][input4-1]!=0 && molin(input3-1,input4-1)!=1){
 
                 if(stat[input3-1][input4-1]==1)
                         greeneaten++;
@@ -807,7 +822,7 @@ if (!(choice2==1 && role==1))
     if(!(input1>0 && input1<=3 && input2>0 && input2<=8)){
         cl();
         printf("Quit?:1/0");
-        scanf("%d",&choice4);
+        choice4=readInt();
         if (choice4==1)
             goto again;
         else{
