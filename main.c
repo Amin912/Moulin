@@ -1,7 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+
+#ifdef _WIN32
 #include <windows.h>
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#endif
+#endif
 
 typedef struct{
 char turn[3];   // What to draw: "@@", "++" or the point's number
@@ -23,8 +30,8 @@ int redeaten=0;         // Pieces removed by player 1
 int greeneaten=0;       // Pieces removed by player 2
 int down[3][8];         // Whether each piece can move to the previous (inner) square
 int up[3][8];           // Whether each piece can move to the next (outer) square
-int clock[3][8];        // Whether each piece can move clockwise
-int counterclock[3][8]; // Whether each piece can move counter-clockwise
+int clockwise[3][8];        // Whether each piece can move clockwise
+int anticlockwise[3][8]; // Whether each piece can move counter-clockwise
 int onBoard1=0;         // Player 1's pieces on the board
 int onBoard2=0;         // Player 2's pieces on the board
 int paralized1=0;       // Player 1's pieces that cannot move
@@ -41,14 +48,14 @@ void possibleMvt()// Work out which directions each piece on the board can move 
     for(i=0;i<3;i++){
         for(j=0;j<8;j++){
             if((j<7 && stat[i][j+1]!=1 && stat[i][j+1]!=2)|| (j==7 && stat[i][0]!=1 && stat[i][0]!=2))
-                clock[i][j]=1;
+                clockwise[i][j]=1;
             else
-                clock[i][j]=0;
+                clockwise[i][j]=0;
 
             if((j>0 && stat[i][j-1]!=1 && stat[i][j-1]!=2)|| (j==0 && stat[i][7]!=1 && stat[i][7]!=2))
-                counterclock[i][j]=1;
+                anticlockwise[i][j]=1;
             else
-                counterclock[i][j]=0;
+                anticlockwise[i][j]=0;
 
             if (i<2 && j%2==1 && stat[i+1][j]!=1 && stat[i+1][j]!=2)
                 up[i][j]=1;
@@ -71,40 +78,18 @@ for(i=0;i<3;i++){
 }
 }
 void cl(){ // Clears the screen
-HANDLE                     hStdOut;
-  CONSOLE_SCREEN_BUFFER_INFO csbi;
-  DWORD                      count;
-  DWORD                      cellCount;
-  COORD                      homeCoords = { 0, 0 };
+    printf("\033[2J\033[H");
+}
 
-  hStdOut = GetStdHandle( STD_OUTPUT_HANDLE );
-  if (hStdOut == INVALID_HANDLE_VALUE) return;
-
-  /* Get the number of cells in the current buffer */
-  if (!GetConsoleScreenBufferInfo( hStdOut, &csbi )) return;
-  cellCount = csbi.dwSize.X *csbi.dwSize.Y;
-
-  /* Fill the entire buffer with spaces */
-  if (!FillConsoleOutputCharacter(
-    hStdOut,
-    (TCHAR) ' ',
-    cellCount,
-    homeCoords,
-    &count
-    )) return;
-
-  /* Fill the entire buffer with the current colors and attributes */
-  if (!FillConsoleOutputAttribute(
-    hStdOut,
-    csbi.wAttributes,
-    cellCount,
-    homeCoords,
-    &count
-    )) return;
-
-  /* Move the cursor home */
-  SetConsoleCursorPosition( hStdOut, homeCoords );
-  }
+// Windows 10 and later understand ANSI escape codes once this is switched on.
+void enableAnsi(){
+#ifdef _WIN32
+    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD mode = 0;
+    if (GetConsoleMode(out, &mode))
+        SetConsoleMode(out, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+#endif
+}
 
 int molin(int a, int b ){ // Returns 1 if the piece at (a, b) is part of a mill
     for(i=0;i<3;i++){
@@ -202,14 +187,17 @@ caseinfo state(int pos1,int pos2){// What to draw at a point, based on the stat 
 
 
 
-void color(int couleurDuTexte,int couleurDeFond) // Sets the text and background colour
+int ansiColor(int c){ // Windows console colour number to ANSI colour number
+    return ((c & 4) ? 1 : 0) | ((c & 2) ? 2 : 0) | ((c & 1) ? 4 : 0);
+}
+
+void color(int text,int background) // Sets the text and background colour
 {
-        HANDLE H=GetStdHandle(STD_OUTPUT_HANDLE);
-        SetConsoleTextAttribute(H,couleurDeFond*16+couleurDuTexte);
+    printf("\033[%d;%dm", (text & 8 ? 90 : 30) + ansiColor(text), (background & 8 ? 100 : 40) + ansiColor(background));
 }
 
 void drawgrid(){
-    printf("                        ",stat[0][0]);
+    printf("                        ");
     color(15*(1-state(1,1).activated),state(1,1).activated*(stat[0][0]*2));printf("%s",state(1,1).turn);color(15,0);
     printf("_______________________________________");
     color(15*(1-state(1,2).activated),state(1,2).activated*(stat[0][1]*2));printf("%s",state(1,2).turn);color(15,0);
@@ -333,14 +321,14 @@ else if (dest==2) // Move counter-clockwise
     }
     else{
         err=1;
-        counterclock[sqr][pos]=0;
+        anticlockwise[sqr][pos]=0;
 }
 }
 
 else if (dest==1) // Move clockwise
 {
     if((pos<7 && stat[sqr][pos+1]!=1 && stat[sqr][pos+1]!=2)|| (pos==7 && stat[sqr][0]!=1 && stat[sqr][0]!=2)){
-    clock[sqr][pos]=1;
+    clockwise[sqr][pos]=1;
     targetsqr=sqr;
     if(pos!=7)
         targetpos=pos+1;
@@ -350,7 +338,7 @@ else if (dest==1) // Move clockwise
     }
     else{
         err=1;
-        clock[sqr][pos]=0;
+        clockwise[sqr][pos]=0;
 }
 }
 else{
@@ -379,13 +367,13 @@ void evaluate(){
         for(j=0;j<8;j++){
             if (stat[i][j]==2){
                 onBoard2++;
-                if(down[i][j]==0 && up[i][j]==0 && clock[i][j]==0 && counterclock[i][j]==0){
+                if(down[i][j]==0 && up[i][j]==0 && clockwise[i][j]==0 && anticlockwise[i][j]==0){
                     paralized2++;
                 }
             }
             else if (stat[i][j]==1){
                 onBoard1++;
-                if(down[i][j]==0 && up[i][j]==0 && clock[i][j]==0 && counterclock[i][j]==0){
+                if(down[i][j]==0 && up[i][j]==0 && clockwise[i][j]==0 && anticlockwise[i][j]==0){
                     paralized1++;
                 }
             }
@@ -415,8 +403,9 @@ void waitForEnter(){ // Waits until the player presses Enter
 
 int main()
 {
+    enableAnsi();
     again:
-    srand(time(0));
+    srand((unsigned)time(NULL));
     int choice;
     int choice2;
     int choice4;
@@ -436,7 +425,7 @@ int main()
     go:
     cl();
     color(3,0);printf("\n\n\n\n\t\t _     _  _______  _     _  ______      __   __   ______  _     _  _   _____       __   __    _____   _____   _____   _______  _____ \n\t\t(_)   (_)(_______)(_)   (_)(______)    (__)_(__) (______)(_)   (_)( ) (_____)     (__)_(__)  (_____) (_____) (_____) (_______)(_____) \n\t\t(__)_ (_)   (_)   (__)_ (_)(_)__      (_) (_) (_)(_)__   (__)_ (_)() (_)___      (_) (_) (_)(_)   (_)(_)__(_)(_)__(_)   (_)  (_)___   \n\t\t(_)(_)(_)   (_)   (_)(_)(_)(____)     (_) (_) (_)(____)  (_)(_)(_)     (___)_    (_) (_) (_)(_)   (_)(_____) (_____)    (_)    (___)_ \n\t\t(_)  (__) __(_)__ (_)  (__)(_)____    (_)     (_)(_)____ (_)  (__)     ____(_)   (_)     (_)(_)___(_)( ) ( ) ( ) ( )  __(_)__  ____(_)\n\t\t(_)   (_)(_______)(_)   (_)(______)   (_)     (_)(______)(_)   (_)    (_____)    (_)     (_) (_____) (_)  (_)(_)  (_)(_______)(_____) \n\t\t\t \n\n\n\n\n\n");color(15,0);
-    color(3,0);printf("                                    \t\t\t\t  __________________\n                                    \t\t\t\t /                  \\\n                                     \t\t\t\t|| 1-->Start Game  \ ||\n                                    \t\t\t\t \\__________________/\n\n\n\n\n\n");color(15,0);
+    color(3,0);printf("                                    \t\t\t\t  __________________\n                                    \t\t\t\t /                  \\\n                                     \t\t\t\t|| 1-->Start Game   ||\n                                    \t\t\t\t \\__________________/\n\n\n\n\n\n");color(15,0);
     color(3,0);printf("                                      \t\t\t\t     __________\n                                      \t\t\t\t    /          \\\n                                      \t\t\t\t   || 2-->Help ||\n                                      \t\t\t\t    \\__________/\n\n\n\n\n\n");color(15,0);
     color(3,0);printf("                                      \t\t\t\t     __________\n                                      \t\t\t\t    /          \\\n                                      \t\t\t\t   || 3-->Exit ||\n                                      \t\t\t\t    \\__________/\n\n\n\n\n\n");color(15,0);
     color(3,0);printf("\n                                      \t\t\t\t     Your choice:");color(15,0);
@@ -792,7 +781,7 @@ eat:
         printf("                 |  __/| |    |  _  |\\ / |  __||    /   | |                \n");
         printf("                 | |   | |____| | | || | | |___| |\\ \\  _| |_               \n");
         printf("                 \\_|   \\_____/\\_| |_/\\_/ \\____/\\_| \\_| \\___/               \n");color(15,0);
-        system("pause");
+        waitForEnter();
         pleft1=9;
         pleft2=9;
         goto go;
